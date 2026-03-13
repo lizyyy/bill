@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记账系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        expense: '#F53F3F',
+                        income: '#00B42A',
+                        transfer: '#165DFF',
+                        loan: '#722ED1',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">记账系统</h1>
+            <p class="text-gray-500">轻松管理你的财务</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold mb-4">添加记录</h2>
+                    <form id="billForm" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" data-type="expense" class="type-btn bg-expense/10 text-expense rounded-lg py-3 font-medium">支出</button>
+                            <button type="button" data-type="income" class="type-btn bg-gray-100 text-gray-500 rounded-lg py-3 font-medium">收入</button>
+                            <button type="button" data-type="transfer" class="type-btn bg-gray-100 text-gray-500 rounded-lg py-3 font-medium">转账</button>
+                            <button type="button" data-type="loan" class="type-btn bg-gray-100 text-gray-500 rounded-lg py-3 font-medium">贷款</button>
+                        </div>
+                        <input type="hidden" id="type" name="type" value="expense">
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">金额</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">¥</span>
+                                <input type="number" step="0.01" id="amount" name="amount" required class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                            <select id="category_id" name="category_id" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                <option value="">请选择分类</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">时间</label>
+                            <input type="datetime-local" id="time" name="time" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                            <textarea id="remark" name="remark" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-primary text-white font-medium py-2.5 rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-plus mr-2"></i>添加记录
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-semibold mb-4">筛选</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">类型</label>
+                            <select id="filterType" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none">
+                                <option value="">全部</option>
+                                <option value="expense">支出</option>
+                                <option value="income">收入</option>
+                                <option value="transfer">转账</option>
+                                <option value="loan">贷款</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">开始日期</label>
+                                <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
+                                <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none">
+                            </div>
+                        </div>
+
+                        <button onclick="loadBills()" class="w-full bg-gray-100 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="fa fa-search mr-2"></i>筛选
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">账单记录</h2>
+                        <div id="summary" class="text-sm text-gray-500"></div>
+                    </div>
+
+                    <div id="billList" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const typeColors = {
+            expense: 'text-expense bg-expense/10',
+            income: 'text-income bg-income/10',
+            transfer: 'text-transfer bg-transfer/10',
+            loan: 'text-loan bg-loan/10'
+        };
+
+        const typeNames = {
+            expense: '支出',
+            income: '收入',
+            transfer: '转账',
+            loan: '贷款'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('time').value = now.toISOString().slice(0, 16);
+
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.type-btn').forEach(b => {
+                        b.classList.remove('bg-expense/10', 'bg-income/10', 'bg-transfer/10', 'bg-loan/10',
+                            'text-expense', 'text-income', 'text-transfer', 'text-loan');
+                        b.classList.add('bg-gray-100', 'text-gray-500');
+                    });
+
+                    const type = this.dataset.type;
+                    this.classList.remove('bg-gray-100', 'text-gray-500');
+                    this.classList.add(`bg-${type}/10`, `text-${type}`);
+                    document.getElementById('type').value = type;
+                });
+            });
+
+            document.getElementById('billForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+
+                data.amount = parseFloat(data.amount);
+                data.category_id = parseInt(data.category_id);
+
+                if (!data.time) {
+                    data.time = new Date().toISOString();
+                } else {
+                    data.time = new Date(data.time).toISOString();
+                }
+
+                const res = await fetch('/api/bills', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.errno === 0) {
+                    this.reset();
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    document.getElementById('time').value = now.toISOString().slice(0, 16);
+                    loadBills();
+                } else {
+                    alert(result.errmsg);
+                }
+            });
+
+            loadCategories();
+            loadBills();
+        });
+
+        async function loadCategories() {
+            const res = await fetch('/api/categories');
+            const result = await res.json();
+            if (result.errno === 0) {
+                const select = document.getElementById('category_id');
+                result.data.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    select.appendChild(opt);
+
+                    if (cat.children) {
+                        cat.children.forEach(child => {
+                            const childOpt = document.createElement('option');
+                            childOpt.value = child.id;
+                            childOpt.textContent = `  └─ ${child.name}`;
+                            select.appendChild(childOpt);
+                        });
+                    }
+                });
+            }
+        }
+
+        async function loadBills() {
+            const params = new URLSearchParams();
+            const type = document.getElementById('filterType').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (type) params.append('type', type);
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+
+            const res = await fetch(`/api/bills?${params.toString()}`);
+            const result = await res.json();
+            if (result.errno === 0) {
+                renderBills(result.data);
+            }
+        }
+
+        function renderBills(bills) {
+            const container = document.getElementById('billList');
+            const summary = document.getElementById('summary');
+
+            if (bills.length === 0) {
+                container.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fa fa-file-text-o text-4xl mb-3"></i><p>暂无记录</p></div>';
+                summary.innerHTML = '';
+                return;
+            }
+
+            let totalIncome = 0, totalExpense = 0;
+            bills.forEach(bill => {
+                if (bill.type === 'income') totalIncome += bill.amount;
+                else if (bill.type === 'expense') totalExpense += bill.amount;
+            });
+
+            summary.innerHTML = `收入: <span class="text-income font-medium">¥${totalIncome.toFixed(2)}</span> 支出: <span class="text-expense font-medium">¥${totalExpense.toFixed(2)}</span>`;
+
+            container.innerHTML = bills.map(bill => `
+                <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="w-10 h-10 rounded-full ${typeColors[bill.type]} flex items-center justify-center mr-3">
+                        <i class="fa ${getTypeIcon(bill.type)}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium">${bill.category?.name || '未分类'}</div>
+                        <div class="text-xs text-gray-500">${new Date(bill.time).toLocaleString()}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium ${bill.type === 'income' ? 'text-income' : bill.type === 'expense' ? 'text-expense' : ''}">
+                            ${bill.type === 'income' ? '+' : bill.type === 'expense' ? '-' : ''}¥${bill.amount.toFixed(2)}
+                        </div>
+                        <div class="text-xs text-gray-500">${bill.remark || typeNames[bill.type]}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getTypeIcon(type) {
+            switch(type) {
+                case 'expense': return 'fa-minus-circle';
+                case 'income': return 'fa-plus-circle';
+                case 'transfer': return 'fa-exchange';
+                case 'loan': return 'fa-credit-card';
+                default: return 'fa-circle';
+            }
+        }
+    </script>
+</body>
+</html>
