@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记账本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .amount {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .stat-card.income .amount { color: #27ae60; }
+        .stat-card.expense .amount { color: #e74c3c; }
+        .stat-card.transfer .amount { color: #3498db; }
+        .stat-card.loan .amount { color: #f39c12; }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .type-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .type-btn:hover {
+            border-color: #667eea;
+        }
+        
+        .type-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .type-btn.expense.active { background: #e74c3c; border-color: #e74c3c; }
+        .type-btn.income.active { background: #27ae60; border-color: #27ae60; }
+        .type-btn.transfer.active { background: #3498db; border-color: #3498db; }
+        .type-btn.loan.active { background: #f39c12; border-color: #f39c12; }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .filter-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-section input,
+        .filter-section select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .records-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+        }
+        
+        .record-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .record-info {
+            flex: 1;
+        }
+        
+        .record-category {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .record-note {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 3px;
+        }
+        
+        .record-time {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 3px;
+        }
+        
+        .record-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .record-amount.expense { color: #e74c3c; }
+        .record-amount.income { color: #27ae60; }
+        .record-amount.transfer { color: #3498db; }
+        .record-amount.loan { color: #f39c12; }
+        
+        .record-actions {
+            margin-left: 15px;
+        }
+        
+        .record-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+        
+        .btn-edit {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .type-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        
+        .type-badge.expense { background: #ffebee; color: #e74c3c; }
+        .type-badge.income { background: #e8f5e9; color: #27ae60; }
+        .type-badge.transfer { background: #e3f2fd; color: #3498db; }
+        .type-badge.loan { background: #fff3e0; color: #f39c12; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+        }
+        
+        .category-select-group {
+            margin-bottom: 15px;
+        }
+        
+        .category-select-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stat-card .amount {
+                font-size: 1.4rem;
+            }
+            
+            .type-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .record-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .record-actions {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 记账本</h1>
+            <p>轻松管理您的每一笔收支</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card income">
+                <h3>总收入</h3>
+                <div class="amount" id="totalIncome">¥0.00</div>
+            </div>
+            <div class="stat-card expense">
+                <h3>总支出</h3>
+                <div class="amount" id="totalExpense">¥0.00</div>
+            </div>
+            <div class="stat-card transfer">
+                <h3>转账</h3>
+                <div class="amount" id="totalTransfer">¥0.00</div>
+            </div>
+            <div class="stat-card loan">
+                <h3>贷款</h3>
+                <div class="amount" id="totalLoan">¥0.00</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2>📝 添加记录</h2>
+                <form id="recordForm">
+                    <div class="type-selector">
+                        <button type="button" class="type-btn expense active" data-type="expense">支出</button>
+                        <button type="button" class="type-btn income" data-type="income">收入</button>
+                        <button type="button" class="type-btn transfer" data-type="transfer">转账</button>
+                        <button type="button" class="type-btn loan" data-type="loan">贷款</button>
+                    </div>
+                    
+                    <div class="category-select-group">
+                        <select id="parentCategory" onchange="loadSubCategories()">
+                            <option value="">选择主分类</option>
+                        </select>
+                        <select id="category_id" name="category_id">
+                            <option value="">选择子分类</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">金额</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0.01" required placeholder="请输入金额">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="record_time">时间</label>
+                        <input type="datetime-local" id="record_time" name="record_time" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="note">备注</label>
+                        <textarea id="note" name="note" rows="2" placeholder="添加备注（可选）"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">添加记录</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>📊 记录列表</h2>
+                <div class="filter-section">
+                    <select id="filterType" onchange="loadRecords()">
+                        <option value="">全部类型</option>
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                        <option value="transfer">转账</option>
+                        <option value="loan">贷款</option>
+                    </select>
+                    <input type="date" id="filterStartDate" onchange="loadRecords()" placeholder="开始日期">
+                    <input type="date" id="filterEndDate" onchange="loadRecords()" placeholder="结束日期">
+                    <input type="text" id="filterKeyword" onkeyup="loadRecords()" placeholder="搜索关键词">
+                </div>
+                <div class="records-list" id="recordsList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <p>暂无记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>编辑记录</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="edit_id">
+                
+                <div class="type-selector">
+                    <button type="button" class="type-btn expense" data-type="expense" onclick="setEditType('expense')">支出</button>
+                    <button type="button" class="type-btn income" data-type="income" onclick="setEditType('income')">收入</button>
+                    <button type="button" class="type-btn transfer" data-type="transfer" onclick="setEditType('transfer')">转账</button>
+                    <button type="button" class="type-btn loan" data-type="loan" onclick="setEditType('loan')">贷款</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_category_id">分类</label>
+                    <select id="edit_category_id" name="category_id"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_amount">金额</label>
+                    <input type="number" id="edit_amount" name="amount" step="0.01" min="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_record_time">时间</label>
+                    <input type="datetime-local" id="edit_record_time" name="record_time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_note">备注</label>
+                    <textarea id="edit_note" name="note" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">保存修改</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let categories = [];
+        let currentType = 'expense';
+        let editType = 'expense';
+        
+        const typeNames = {
+            'expense': '支出',
+            'income': '收入',
+            'transfer': '转账',
+            'loan': '贷款'
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('record_time').value = now.toISOString().slice(0, 16);
+            
+            loadCategories();
+            loadRecords();
+            
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (this.closest('#editModal')) return;
+                    e.preventDefault();
+                    document.querySelectorAll('.type-btn:not(#editModal .type-btn)').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentType = this.dataset.type;
+                });
+            });
+            
+            document.getElementById('recordForm').addEventListener('submit', handleSubmit);
+            document.getElementById('editForm').addEventListener('submit', handleEdit);
+        });
+        
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                const result = await response.json();
+                if (result.errno === 0) {
+                    categories = result.data;
+                    renderParentCategories();
+                    renderCategorySelect('category_id');
+                    renderCategorySelect('edit_category_id');
+                }
+            } catch (error) {
+                console.error('加载分类失败:', error);
+            }
+        }
+        
+        function renderParentCategories() {
+            const select = document.getElementById('parentCategory');
+            select.innerHTML = '<option value="">选择主分类</option>';
+            categories.forEach(cat => {
+                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        }
+        
+        function loadSubCategories() {
+            const parentId = document.getElementById('parentCategory').value;
+            const select = document.getElementById('category_id');
+            select.innerHTML = '<option value="">选择子分类</option>';
+            
+            if (parentId) {
+                const parent = categories.find(c => c.id == parentId);
+                if (parent && parent.children) {
+                    parent.children.forEach(child => {
+                        select.innerHTML += `<option value="${child.id}">${child.name}</option>`;
+                    });
+                }
+            }
+        }
+        
+        function renderCategorySelect(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '';
+            
+            categories.forEach(parent => {
+                if (parent.children && parent.children.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = parent.name;
+                    parent.children.forEach(child => {
+                        const option = document.createElement('option');
+                        option.value = child.id;
+                        option.textContent = child.name;
+                        optgroup.appendChild(option);
+                    });
+                    select.appendChild(optgroup);
+                }
+            });
+        }
+        
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const categoryId = document.getElementById('category_id').value;
+            if (!categoryId) {
+                alert('请选择分类');
+                return;
+            }
+            
+            const data = {
+                category_id: parseInt(categoryId),
+                type: currentType,
+                amount: parseFloat(document.getElementById('amount').value),
+                note: document.getElementById('note').value,
+                record_time: document.getElementById('record_time').value
+            };
+            
+            try {
+                const response = await fetch('/api/records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.errno === 0) {
+                    document.getElementById('recordForm').reset();
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    document.getElementById('record_time').value = now.toISOString().slice(0, 16);
+                    loadRecords();
+                } else {
+                    alert('添加失败: ' + result.errmsg);
+                }
+            } catch (error) {
+                alert('添加失败: ' + error.message);
+            }
+        }
+        
+        async function loadRecords() {
+            const filters = {};
+            
+            const type = document.getElementById('filterType').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const keyword = document.getElementById('filterKeyword').value;
+            
+            if (type) filters.type = type;
+            if (startDate) filters.start_time = startDate + ' 00:00:00';
+            if (endDate) filters.end_time = endDate + ' 23:59:59';
+            if (keyword) filters.keyword = keyword;
+            
+            const params = new URLSearchParams(filters);
+            
+            try {
+                const response = await fetch('/api/records?' + params.toString());
+                const result = await response.json();
+                if (result.errno === 0) {
+                    renderRecords(result.data);
+                    updateStats(result.data);
+                }
+            } catch (error) {
+                console.error('加载记录失败:', error);
+            }
+        }
+        
+        function renderRecords(records) {
+            const container = document.getElementById('recordsList');
+            
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <p>暂无记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = records.map(record => `
+                <div class="record-item">
+                    <div class="record-info">
+                        <div class="record-category">
+                            ${record.category_name}
+                            <span class="type-badge ${record.type}">${typeNames[record.type]}</span>
+                        </div>
+                        ${record.note ? `<div class="record-note">${record.note}</div>` : ''}
+                        <div class="record-time">${formatTime(record.record_time)}</div>
+                    </div>
+                    <div class="record-amount ${record.type}">
+                        ¥${parseFloat(record.amount).toFixed(2)}
+                    </div>
+                    <div class="record-actions">
+                        <button class="btn-edit" onclick="openEditModal(${record.id})">编辑</button>
+                        <button class="btn-delete" onclick="deleteRecord(${record.id})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateStats(records) {
+            let income = 0, expense = 0, transfer = 0, loan = 0;
+            
+            records.forEach(record => {
+                const amount = parseFloat(record.amount);
+                switch(record.type) {
+                    case 'income': income += amount; break;
+                    case 'expense': expense += amount; break;
+                    case 'transfer': transfer += amount; break;
+                    case 'loan': loan += amount; break;
+                }
+            });
+            
+            document.getElementById('totalIncome').textContent = '¥' + income.toFixed(2);
+            document.getElementById('totalExpense').textContent = '¥' + expense.toFixed(2);
+            document.getElementById('totalTransfer').textContent = '¥' + transfer.toFixed(2);
+            document.getElementById('totalLoan').textContent = '¥' + loan.toFixed(2);
+        }
+        
+        function formatTime(timeStr) {
+            const date = new Date(timeStr);
+            return date.toLocaleString('zh-CN');
+        }
+        
+        async function openEditModal(id) {
+            try {
+                const response = await fetch(`/api/records`);
+                const result = await response.json();
+                if (result.errno === 0) {
+                    const record = result.data.find(r => r.id === id);
+                    if (record) {
+                        document.getElementById('edit_id').value = record.id;
+                        document.getElementById('edit_category_id').value = record.category_id;
+                        document.getElementById('edit_amount').value = record.amount;
+                        document.getElementById('edit_note').value = record.note || '';
+                        
+                        const timeValue = record.record_time.replace(' ', 'T').slice(0, 16);
+                        document.getElementById('edit_record_time').value = timeValue;
+                        
+                        editType = record.type;
+                        document.querySelectorAll('#editModal .type-btn').forEach(btn => {
+                            btn.classList.toggle('active', btn.dataset.type === editType);
+                        });
+                        
+                        document.getElementById('editModal').classList.add('active');
+                    }
+                }
+            } catch (error) {
+                console.error('获取记录失败:', error);
+            }
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        
+        function setEditType(type) {
+            editType = type;
+            document.querySelectorAll('#editModal .type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+        
+        async function handleEdit(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit_id').value;
+            const data = {
+                category_id: parseInt(document.getElementById('edit_category_id').value),
+                type: editType,
+                amount: parseFloat(document.getElementById('edit_amount').value),
+                note: document.getElementById('edit_note').value,
+                record_time: document.getElementById('edit_record_time').value
+            };
+            
+            try {
+                const response = await fetch(`/api/records/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.errno === 0) {
+                    closeEditModal();
+                    loadRecords();
+                } else {
+                    alert('修改失败: ' + result.errmsg);
+                }
+            } catch (error) {
+                alert('修改失败: ' + error.message);
+            }
+        }
+        
+        async function deleteRecord(id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/records/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                if (result.errno === 0) {
+                    loadRecords();
+                } else {
+                    alert('删除失败: ' + result.errmsg);
+                }
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
