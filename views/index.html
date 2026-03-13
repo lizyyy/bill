@@ -161,8 +161,13 @@
                 const formData = new FormData(this);
                 const data = Object.fromEntries(formData);
 
+                data.amount = parseFloat(data.amount);
+                data.category_id = parseInt(data.category_id);
+
                 if (!data.time) {
                     data.time = new Date().toISOString();
+                } else {
+                    data.time = new Date(data.time).toISOString();
                 }
 
                 const res = await fetch('/api/bills', {
