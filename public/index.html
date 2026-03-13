@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记账本</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📒 记账本</h1>
+        </header>
+
+        <!-- 统计卡片 -->
+        <div class="stats-cards">
+            <div class="stat-card expense">
+                <div class="stat-label">总支出</div>
+                <div class="stat-value" id="totalExpense">¥0.00</div>
+            </div>
+            <div class="stat-card income">
+                <div class="stat-label">总收入</div>
+                <div class="stat-value" id="totalIncome">¥0.00</div>
+            </div>
+            <div class="stat-card balance">
+                <div class="stat-label">结余</div>
+                <div class="stat-value" id="balance">¥0.00</div>
+            </div>
+        </div>
+
+        <!-- 添加记录表单 -->
+        <div class="form-section">
+            <h2>添加记账记录</h2>
+            <form id="recordForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="type">类型</label>
+                        <select id="type" name="type" required>
+                            <option value="expense">支出</option>
+                            <option value="income">收入</option>
+                            <option value="transfer">转账</option>
+                            <option value="loan">贷款</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">金额</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0" required placeholder="请输入金额">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">分类</label>
+                        <select id="category" name="category_id" required>
+                            <option value="">请选择分类</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subcategory">子分类</label>
+                        <select id="subcategory" name="subcategory_id">
+                            <option value="">请选择子分类</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">备注</label>
+                        <input type="text" id="note" name="note" placeholder="可选">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">添加记录</button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">重置</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 筛选和搜索 -->
+        <div class="filter-section">
+            <h2>筛选记录</h2>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="filterType">类型</label>
+                    <select id="filterType">
+                        <option value="">全部</option>
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                        <option value="transfer">转账</option>
+                        <option value="loan">贷款</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterCategory">分类</label>
+                    <select id="filterCategory">
+                        <option value="">全部</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterStartDate">开始日期</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label for="filterEndDate">结束日期</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                <div class="filter-group">
+                    <label for="filterKeyword">搜索</label>
+                    <input type="text" id="filterKeyword" placeholder="搜索备注或分类">
+                </div>
+                <div class="filter-group filter-actions">
+                    <button class="btn btn-primary" id="filterBtn">筛选</button>
+                    <button class="btn btn-secondary" id="clearFilterBtn">清空</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 记录列表 -->
+        <div class="records-section">
+            <h2>记账记录</h2>
+            <div class="records-list" id="recordsList">
+                <!-- 记录将在这里动态渲染 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑模态框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑记录</h3>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editType">类型</label>
+                        <select id="editType" name="type" required>
+                            <option value="expense">支出</option>
+                            <option value="income">收入</option>
+                            <option value="transfer">转账</option>
+                            <option value="loan">贷款</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAmount">金额</label>
+                        <input type="number" id="editAmount" name="amount" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCategory">分类</label>
+                        <select id="editCategory" name="category_id" required>
+                            <option value="">请选择分类</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSubcategory">子分类</label>
+                        <select id="editSubcategory" name="subcategory_id">
+                            <option value="">请选择子分类</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDate">日期</label>
+                        <input type="date" id="editDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNote">备注</label>
+                        <input type="text" id="editNote" name="note">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEdit">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
